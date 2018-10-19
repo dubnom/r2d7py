@@ -6,18 +6,20 @@ using Python.
 # Example:
 
     from time import sleep
-    from pencompy import pencompy
+    from r2d7py import *
     
-    hub = pencompy( 'host.test.com', 4008 )
+    hub = R2D7Hub( 'host.test.com', 4008 )
 
-    # Turn the first relay on
-    hub.set( 0, 0, True )
+    # Address=1, Unit=2, shade traversal time=14.2
+    shade = hub.shade( 1, 2, 14.2 )
 
-    # Pause for a second
-    sleep(1.)
+    # Open the shade
+    shade.open()
+    sleep(15.)
 
-    # Turn the first relay off
-    hub.set( 0, 0, False )
+    # Position the shade half way
+    shade.position = 50.
+    sleep(15.)
 
     # Close the interface
     hub.close()
