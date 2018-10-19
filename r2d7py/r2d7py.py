@@ -66,7 +66,7 @@ class R2D7Hub(Thread):
 
     def shade(self,addr,unit,length):
         """Create an object for each shade unit."""
-        if 0 <= addr < MAX_ADDRS and 0 <= unit < MAX_UNITS:
+        if 0 < addr <= MAX_ADDRS and 0 < unit <= MAX_UNITS:
             return R2D7Shade(self,addr,unit,length)
         raise ValueError('Address or Unit is out of range.')
 
