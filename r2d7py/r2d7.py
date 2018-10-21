@@ -3,7 +3,7 @@ Support for r2d7 shade controllers.
 
 These controllers are from Electronic Solutions Inc (ESI), a
 Hunter Douglas Company.  More information can be found at:
-    
+
 http://elec-solutions.com/products/automation-accessories/accessories/r2d7.html
 
 Communication is handled over a remote serial port (NPort) using

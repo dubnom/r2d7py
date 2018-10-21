@@ -1,0 +1,15 @@
+homeworks:
+  host: 192.168.2.55
+  port: 4008
+
+cover:
+  - platform: r2d7py
+    - name: "Family Left"
+      address: 1
+      unit: 1
+      duration: 15.4
+    - name: "Family Right"
+      address: 1
+      unit: 1
+      duration: 15.4
+
