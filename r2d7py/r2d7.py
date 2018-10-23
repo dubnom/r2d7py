@@ -17,7 +17,7 @@ from homeassistant.components.cover import (
     CoverDevice, SUPPORT_OPEN, SUPPORT_CLOSE, SUPPORT_SET_POSITION,
     ATTR_POSITION)
 
-REQUIREMENTS = ['r2d7==0.0.1']
+REQUIREMENTS = ['r2d7py==0.0.1']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,15 +26,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the r2d7 shade controller and shades."""
     devs = []
     for (area_name, device) in hass.data[R2D7_DEVICES]['cover']:
-        dev = LutronCover(area_name, device, hass.data[R2D7_CONTROLLER])
+        dev = R2D7Cover(area_name, device, hass.data[R2D7_CONTROLLER])
         devs.append(dev)
 
     add_entities(devs, True)
     return True
 
 
-class R2D7Cover(LutronDevice, CoverDevice):
-    """Representation of a Lutron shade."""
+class R2D7Cover(CoverDevice):
+    """Representation of an R2D7 controlled shade."""
 
     @property
     def supported_features(self):
