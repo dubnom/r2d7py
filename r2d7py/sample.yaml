@@ -1,5 +1,5 @@
 cover:
-  - platform: r2d7py
+  - platform: r2d7
     host: 192.168.2.55
     port: 4008
     devices:
@@ -11,4 +11,3 @@ cover:
       address: 1
       unit: 1
       duration: 15.4
-
