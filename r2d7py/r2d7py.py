@@ -19,6 +19,7 @@ import telnetlib
 MAX_ADDRS = 7
 MAX_UNITS = 60
 
+
 class R2D7Shade(object):
     """Represent one (or a pre-coded group) of shades."""
     def __init__(self, hub, addr, unit, length):
@@ -32,11 +33,11 @@ class R2D7Shade(object):
 
     def open(self):
         """Open the shade."""
-        self.position = 0
+        self.position = 100
 
     def close(self):
         """Close the shade."""
-        self.position = 100
+        self.position = 0
 
     @property
     def position(self):
@@ -79,7 +80,7 @@ class R2D7Hub(Thread):
         """Move the shade a relative +/- duration."""
         # duration is specified as 20ths of a second
         if duration != 0:
-            direction = ['o', 'c'][duration < 0]
+            direction = ['o', 'c'][duration > 0]
             duration = abs(duration)
             self._send('*%d%s%02d%03d;' % (addr, direction, unit, duration))
 

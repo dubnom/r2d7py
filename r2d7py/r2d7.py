@@ -12,29 +12,66 @@ telnet protocol.
 Michael Dubno - 2018 - New York
 """
 import logging
-
+import voluptuous as vol
 from homeassistant.components.cover import (
     CoverDevice, SUPPORT_OPEN, SUPPORT_CLOSE, SUPPORT_SET_POSITION,
-    ATTR_POSITION)
+    ATTR_POSITION, PLATFORM_SCHEMA)
+from homeassistant.const import (
+    EVENT_HOMEASSISTANT_STOP,
+    CONF_HOST, CONF_PORT, CONF_NAME, CONF_ADDRESS, CONF_UNIT, CONF_DEVICES)
+import homeassistant.helpers.config_validation as cv
 
 REQUIREMENTS = ['r2d7py==0.0.1']
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_DURATION = 'duration'
+CV_DURATION = vol.All(vol.Coerce(float), vol.Range(min=1, max=60))
+
+DEVICE_SCHEMA = vol.Schema({
+    vol.Required(CONF_NAME): cv.string,
+    vol.Required(CONF_ADDRESS): cv.string,
+    vol.Required(CONF_DURATION): CV_DURATION,
+})
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_HOST): cv.string,
+    vol.Required(CONF_PORT): cv.port,
+    vol.Required(CONF_DEVICES): vol.All(cv.ensure_list, [DEVICE_SCHEMA])
+})
+
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the r2d7 shade controller and shades."""
+    from r2d7py import R2D7Hub
+
+    host = config.get(CONF_HOST)
+    port = config.get(CONF_PORT)
+    hub = R2D7Hub(host, port)
+
     devs = []
-    for (area_name, device) in hass.data[R2D7_DEVICES]['cover']:
-        dev = R2D7Cover(area_name, device, hass.data[R2D7_CONTROLLER])
-        devs.append(dev)
+    for device in config.get(CONF_DEVICES):
+        name = device.get(CONF_NAME)
+        addr = device.get(CONF_ADDRESS)
+        unit = device.get(CONF_UNIT)
+        duration = device.get(CONF_DURATION)
+        cover = hub.shade(addr, unit, duration)
+        devs.append(R2D7Cover(cover, name))
 
     add_entities(devs, True)
+
+    def cleanup(event):
+        hub.close()
+
+    hass.bus_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup)
     return True
 
 
 class R2D7Cover(CoverDevice):
     """Representation of an R2D7 controlled shade."""
+
+    def __init__(self, cover, name):
+        self._cover = cover
+        self._name = name
 
     @property
     def supported_features(self):
@@ -44,37 +81,33 @@ class R2D7Cover(CoverDevice):
     @property
     def is_closed(self):
         """Return if the cover is closed."""
-        return self._lutron_device.last_level() < 1
+        return self._cover.position < 1
 
     @property
     def current_cover_position(self):
         """Return the current position of cover."""
-        return self._lutron_device.last_level()
+        return self._cover.position
 
     def close_cover(self, **kwargs):
         """Close the cover."""
-        self._lutron_device.level = 0
+        self._cover.close()
 
     def open_cover(self, **kwargs):
         """Open the cover."""
-        self._lutron_device.level = 100
+        self._cover.open()
 
     def set_cover_position(self, **kwargs):
         """Move the shade to a specific position."""
         if ATTR_POSITION in kwargs:
             position = kwargs[ATTR_POSITION]
-            self._lutron_device.level = position
+            self._cover.position = position
 
     def update(self):
         """Call when forcing a refresh of the device."""
-        # Reading the property (rather than last_level()) fetches value
-        level = self._lutron_device.level
-        _LOGGER.debug("Lutron ID: %d updated to %f",
-                      self._lutron_device.id, level)
+        # FIX: Mark the device as non-polling
+        pass
 
     @property
     def device_state_attributes(self):
         """Return the state attributes."""
-        attr = {}
-        attr['Lutron Integration ID'] = self._lutron_device.id
-        return attr
+        return {}
