@@ -18,19 +18,21 @@ from homeassistant.components.cover import (
     ATTR_POSITION, PLATFORM_SCHEMA)
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
-    CONF_HOST, CONF_PORT, CONF_NAME, CONF_ADDRESS, CONF_UNIT, CONF_DEVICES)
+    CONF_HOST, CONF_PORT, CONF_NAME, CONF_ADDRESS, CONF_DEVICES)
 import homeassistant.helpers.config_validation as cv
 
 REQUIREMENTS = ['r2d7py==0.0.1']
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_UNIT = 'unit'
 CONF_DURATION = 'duration'
 CV_DURATION = vol.All(vol.Coerce(float), vol.Range(min=1, max=60))
 
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string,
-    vol.Required(CONF_ADDRESS): cv.string,
+    vol.Required(CONF_ADDRESS): int,
+    vol.Required(CONF_UNIT): int, 
     vol.Required(CONF_DURATION): CV_DURATION,
 })
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -42,7 +44,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the r2d7 shade controller and shades."""
-    from r2d7py import R2D7Hub
+    from r2d7py.r2d7py import R2D7Hub
 
     host = config.get(CONF_HOST)
     port = config.get(CONF_PORT)
@@ -62,7 +64,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     def cleanup(event):
         hub.close()
 
-    hass.bus_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup)
+    hass.bus.listen_once(EVENT_HOMEASSISTANT_STOP, cleanup)
     return True
 
 
@@ -72,6 +74,11 @@ class R2D7Cover(CoverDevice):
     def __init__(self, cover, name):
         self._cover = cover
         self._name = name
+
+    @property
+    def name(self):
+        """Device name."""
+        return self._name
 
     @property
     def supported_features(self):

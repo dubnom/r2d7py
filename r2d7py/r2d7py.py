@@ -7,14 +7,17 @@ More information can be found at:
 http://elec-solutions.com/products/automation-accessories/accessories/r2d7.html
 
 Communication is handled over a remote serial port (NPort) using
-telnet protocol.
+standard TCP sockets.
 
 Michael Dubno - 2018 - New York
 """
 
 from threading import Thread
 import time
-import telnetlib
+import socket
+import select
+
+POLLING_FREQ = 1.
 
 MAX_ADDRS = 7
 MAX_UNITS = 60
@@ -61,14 +64,13 @@ class R2D7Hub(Thread):
         self._host = host
         self._port = port
 
-        self._telnet = None
+        self._socket = None
         self._running = False
         self._connect()
         self.start()
 
     def _connect(self):
-        # FIX: Add userID and password
-        self._telnet = telnetlib.Telnet(self._host, self._port)
+        self._socket = socket.create_connection((self._host, self._port))
 
     def shade(self, addr, unit, length):
         """Create an object for each shade unit."""
@@ -86,18 +88,23 @@ class R2D7Hub(Thread):
 
     def _send(self, command):
         # FIX: If error, reconnect
-        self._telnet.write((command+'\n').encode('utf8'))
+        self._socket.send((command+'\n').encode('utf8'))
 
     def run(self):
         # FIX: In the future do something with the feedback
         self._running = True
         while self._running:
-            self._telnet.read_until(b' ', 1.)
+            try:
+                readable, _, _ = select.select([self._socket], [], [], POLLING_FREQ)
+            except socket.error as err:
+                raise
+            if len(readable) != 0:
+                byte = self._socket.recv(1)
 
     def close(self):
         """Close the connection to the controller."""
         self._running = False
-        if self._telnet:
+        if self._socket:
             time.sleep(1.)
-            self._telnet.close()
-            self._telnet = None
+            self._socket.close()
+            self._socket = None
