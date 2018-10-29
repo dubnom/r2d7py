@@ -82,7 +82,7 @@ class R2D7Hub(Thread):
         """Move the shade a relative +/- duration."""
         # duration is specified as 20ths of a second
         if duration != 0:
-            direction = ['o', 'c'][duration > 0]
+            direction = ['c', 'o'][duration > 0]
             duration = abs(duration)
             self._send('*%d%s%02d%03d;' % (addr, direction, unit, duration))
 

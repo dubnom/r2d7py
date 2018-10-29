@@ -31,8 +31,8 @@ CV_DURATION = vol.All(vol.Coerce(float), vol.Range(min=1, max=60))
 
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string,
-    vol.Required(CONF_ADDRESS): int,
-    vol.Required(CONF_UNIT): int, 
+    vol.Required(CONF_ADDRESS): cv.positive_int,
+    vol.Required(CONF_UNIT): cv.positive_int,
     vol.Required(CONF_DURATION): CV_DURATION,
 })
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
