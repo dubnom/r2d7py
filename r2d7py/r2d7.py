@@ -26,11 +26,11 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_UNIT = 'unit'
 CONF_DURATION = 'duration'
-CV_DURATION = vol.All(vol.Coerce(float), vol.Range(min=1, max=60))
+CV_DURATION = vol.All(vol.Coerce(float), vol.Range(min=1., max=60.))
 
 DEVICE_SCHEMA = vol.Schema({
     vol.Required(CONF_NAME): cv.string,
-    vol.Required(CONF_ADDRESS): cv.positive_int,
+    vol.Optional(CONF_ADDRESS, default=1): cv.positive_int,
     vol.Required(CONF_UNIT): cv.positive_int,
     vol.Required(CONF_DURATION): CV_DURATION,
 })

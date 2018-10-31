@@ -16,6 +16,9 @@ from threading import Thread
 import time
 import socket
 import select
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 POLLING_FREQ = 1.
 
@@ -84,11 +87,11 @@ class R2D7Hub(Thread):
         if duration != 0:
             direction = ['c', 'o'][duration > 0]
             duration = abs(duration)
-            self._send('*%d%s%02d%03d;' % (addr, direction, unit, duration))
+            self._send('*%d%s%02d%03d;*%ds%02d;' % (addr, direction, unit, duration, addr, unit))
 
     def _send(self, command):
         # FIX: If error, reconnect
-        self._socket.send((command+'\n').encode('utf8'))
+        self._socket.send(command.encode('utf8'))
 
     def run(self):
         # FIX: In the future do something with the feedback
