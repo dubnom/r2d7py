@@ -62,18 +62,24 @@ class R2D7Shade(object):
 class R2D7Hub(Thread):
     """Interface with an R2D7 shade controller."""
 
+    _socket = None
+    _running = False
+
     def __init__(self, host, port):
         Thread.__init__(self, target=self)
         self._host = host
         self._port = port
 
-        self._socket = None
-        self._running = False
         self._connect()
+        if self._socket == None:
+            raise ConnectionError("Couldn't connect to '%s:%d'" % (host, port))
         self.start()
 
     def _connect(self):
-        self._socket = socket.create_connection((self._host, self._port))
+        try:
+            self._socket = socket.create_connection((self._host, self._port))
+        except (BlockingIOError, ConnectionError, TimeoutError) as error:
+            _LOGGER.error("Connection: %s", error)
 
     def shade(self, addr, unit, length):
         """Create an object for each shade unit."""
@@ -90,19 +96,27 @@ class R2D7Hub(Thread):
             self._send('*%d%s%02d%03d;*%ds%02d;' % (addr, direction, unit, duration, addr, unit))
 
     def _send(self, command):
-        # FIX: If error, reconnect
-        self._socket.send(command.encode('utf8'))
+        try:
+            self._socket.send(command.encode('utf8'))
+            return True
+        except (ConnectionError, AttributeError):
+            self._socket = None
+            return False
 
     def run(self):
-        # FIX: In the future do something with the feedback
         self._running = True
         while self._running:
-            try:
-                readable, _, _ = select.select([self._socket], [], [], POLLING_FREQ)
-            except socket.error as err:
-                raise
-            if len(readable) != 0:
-                byte = self._socket.recv(1)
+            if self._socket == None:
+                time.sleep(POLLING_FREQ)
+                self._connect()
+            else:
+                try:
+                    readable, _, _ = select.select([self._socket], [], [], POLLING_FREQ)
+                    if len(readable) != 0:
+                        # FIX: In the future do something with the feedback
+                        byte = self._socket.recv(1)
+                except (ConnectionError, AttributeError):
+                    self._socket = None
 
     def close(self):
         """Close the connection to the controller."""

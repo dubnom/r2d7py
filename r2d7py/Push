@@ -1,0 +1,6 @@
+cp r2d7.py ~/dev/home-assistant/homeassistant/components/cover
+cd ..
+pip uninstall r2d7py
+python3 setup.py sdist bdist_wheel
+pip install dist/r2d7py-0.0.1.tar.gz
+cd r2d7py
