@@ -12,7 +12,7 @@ standard TCP sockets.
 Michael Dubno - 2018 - New York
 """
 
-from threading import Thread
+from threading import Thread, Event
 import time
 import socket
 import select
@@ -33,9 +33,14 @@ class R2D7Shade(object):
         self._addr = addr
         self._unit = unit
         self._length = length
-        self._position = 0.
-        # FIX: Close the shade automatically at start up
-        #      so it will be in a known position
+        self._timer = None
+
+        self.is_closing = False
+        self.is_opening = False
+
+        # Close the shade at start up so it is in a known position
+        self._position = 100
+        self.close()
 
     def open(self):
         """Open the shade."""
@@ -63,10 +68,34 @@ class R2D7Shade(object):
     @position.setter
     def position(self, position):
         """Set the position of the shade."""
+        if self._timer:
+            return
         amount = position - self._position
-        duration = int(20. * self._length * amount / 100.)
-        self._hub.move(self._addr, self._unit, duration)
-        self._position = position
+        duration = self._length * amount / 100.
+        if duration != 0:
+            # Move the shade a relative +/- duration.
+            if duration > 0:
+                direction = 'o'
+                self.is_opening = True
+            else:
+                direction = 'c'
+                self.is_closing = True
+            duration = abs(duration)
+            self._timer = PartialTimer(duration, self._done_moving, amount)
+            self._hub.send('*%d%s%02d004;' % (self._addr, direction, self._unit))
+            self._timer.start()
+
+    def _done_moving(self, delta):
+        self._hub.send('*%ds%02d;' % (self._addr, self._unit))
+        pos = self._position + delta
+        self._position = 0 if pos < 0 else 100 if pos > 100 else pos
+        self.is_opening = False
+        self.is_closing = False
+        self._timer = None
+
+    def stop(self):
+        if self._timer:
+            self._timer.cancel()
 
 
 class R2D7Hub(Thread):
@@ -89,7 +118,7 @@ class R2D7Hub(Thread):
         try:
             self._socket = socket.create_connection((self._host, self._port))
         except (BlockingIOError, ConnectionError, TimeoutError) as error:
-            _LOGGER.error("Connection: %s", error)
+            _LOGGER.warning("Connection: %s", error)
 
     def shade(self, addr, unit, length):
         """Create an object for each shade unit."""
@@ -97,19 +126,13 @@ class R2D7Hub(Thread):
             return R2D7Shade(self, addr, unit, length)
         raise ValueError('Address or Unit is out of range.')
 
-    def move(self, addr, unit, duration):
-        """Move the shade a relative +/- duration."""
-        # duration is specified as 20ths of a second
-        if duration != 0:
-            direction = ['c', 'o'][duration > 0]
-            duration = abs(duration)
-            self._send('*%d%s%02d%03d;*%ds%02d;' % (addr, direction, unit, duration, addr, unit))
-
-    def _send(self, command):
+    def send(self, command):
         try:
             self._socket.send(command.encode('utf8'))
             return True
         except (ConnectionError, AttributeError):
+            if self._socket != None:
+                _LOGGER.warning("Lost connection")
             self._socket = None
             return False
 
@@ -135,3 +158,24 @@ class R2D7Hub(Thread):
             time.sleep(1.)
             self._socket.close()
             self._socket = None
+
+
+class PartialTimer(Thread):
+    def __init__(self, interval, function, delta):
+        Thread.__init__(self)
+        self.interval = interval
+        self.function = function
+        self.delta = delta
+        self.finished = Event()
+
+    def cancel(self):
+        """Stop the timer if it hasn't finished yet."""
+        self.finished.set()
+
+    def run(self):
+        start_time = time.time()
+        self.finished.wait(self.interval)
+        elapsed_time = time.time() - start_time
+        delta = self.delta * elapsed_time / self.interval
+        self.function(delta)
+        self.finished.set()

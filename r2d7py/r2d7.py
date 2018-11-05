@@ -14,7 +14,7 @@ import logging
 import voluptuous as vol
 from homeassistant.components.cover import (
     CoverDevice, SUPPORT_OPEN, SUPPORT_CLOSE, SUPPORT_SET_POSITION,
-    ATTR_POSITION, PLATFORM_SCHEMA)
+    SUPPORT_STOP, ATTR_POSITION, PLATFORM_SCHEMA)
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
     CONF_HOST, CONF_PORT, CONF_NAME, CONF_ADDRESS, CONF_DEVICES)
@@ -88,7 +88,7 @@ class R2D7Cover(CoverDevice):
     @property
     def supported_features(self):
         """Flag supported features."""
-        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION
+        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION | SUPPORT_STOP
 
     @property
     def is_closed(self):
@@ -108,11 +108,24 @@ class R2D7Cover(CoverDevice):
         """Open the cover."""
         self._cover.open()
 
+    def stop_cover(self, **kwargs):
+        """Stop the cover."""
+        self._cover.stop()
+
     def set_cover_position(self, **kwargs):
         """Move the shade to a specific position."""
         if ATTR_POSITION in kwargs:
-            position = kwargs[ATTR_POSITION]
-            self._cover.position = position
+            self._cover.position = kwargs[ATTR_POSITION]
+
+    @property
+    def is_opening(self):
+        """Is the cover opening?"""
+        return self._cover.is_opening
+
+    @property
+    def is_closing(self):
+        """Is the cover closing?"""
+        return self._cover.is_closing
 
     def update(self):
         """Call when forcing a refresh of the device."""
