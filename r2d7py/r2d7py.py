@@ -46,6 +46,16 @@ class R2D7Shade(object):
         self.position = 0
 
     @property
+    def addr(self):
+        """Get the address of the shade."""
+        return self._addr
+
+    @property
+    def unit(self):
+        """Get the unit of the shade."""
+        return self._unit
+
+    @property
     def position(self):
         """Get the position of the shade."""
         return self._position

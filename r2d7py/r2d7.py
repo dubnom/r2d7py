@@ -80,6 +80,12 @@ class R2D7Cover(CoverDevice):
         return self._name
 
     @property
+    def device_state_attributes(self):
+        """Return supported attributes."""
+        return {"Addr": self._cover.addr,
+                "Unit": self._cover.unit}
+
+    @property
     def supported_features(self):
         """Flag supported features."""
         return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION
