@@ -1,4 +1,4 @@
-cp r2d7.py ~/dev/home-assistant/homeassistant/components/cover
+cp -r ha/ ~/dev/home-assistant/homeassistant/components
 cd ..
 pip uninstall r2d7py
 python3 setup.py sdist bdist_wheel
