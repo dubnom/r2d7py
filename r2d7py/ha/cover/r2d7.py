@@ -1,14 +1,7 @@
-"""
-Support for r2d7 shade controllers.
+"""Support for r2d7 shade controllers.
 
-These controllers are from Electronic Solutions Inc (ESI), a
-Hunter Douglas Company.  More information can be found at:
-
-http://elec-solutions.com/products/automation-accessories/accessories/r2d7.html
-
-Communication is handled over a remote serial port (NPort).
-
-Michael Dubno - 2018 - New York
+For more details about this component, please refer to the documentation at
+https://home-assistant.io/components/r2d7/
 """
 import logging
 import voluptuous as vol
@@ -71,6 +64,7 @@ class R2D7Cover(CoverDevice):
     """Representation of an R2D7 controlled shade."""
 
     def __init__(self, cover, name):
+        """Initialize the cover."""
         self._cover = cover
         self._name = name
 
@@ -88,7 +82,8 @@ class R2D7Cover(CoverDevice):
     @property
     def supported_features(self):
         """Flag supported features."""
-        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION | SUPPORT_STOP
+        return (SUPPORT_OPEN | SUPPORT_CLOSE |
+                SUPPORT_SET_POSITION | SUPPORT_STOP)
 
     @property
     def is_closed(self):
@@ -119,20 +114,15 @@ class R2D7Cover(CoverDevice):
 
     @property
     def is_opening(self):
-        """Is the cover opening?"""
+        """Is the cover opening."""
         return self._cover.is_opening
 
     @property
     def is_closing(self):
-        """Is the cover closing?"""
+        """Is the cover closing."""
         return self._cover.is_closing
 
     def update(self):
         """Call when forcing a refresh of the device."""
         # FIX: Mark the device as non-polling
         pass
-
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {}
