@@ -1,8 +1,2 @@
 target=~/dev/home-assistant/homeassistant/components
 cp ha/cover/r2d7.py $target/cover 
-cd ..
-pip uninstall r2d7py
-python3 setup.py sdist bdist_wheel
-twine upload dist/*
-pip install r2d7py
-cd r2d7py
